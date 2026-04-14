@@ -1,4 +1,4 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, type InfiniteData } from '@tanstack/react-query';
 import { type PostsData } from '@/entities/post/model/feed-types';
 import { type PostTier } from '@/entities/post/model/types';
 import { getFeed } from '@/features/feed/api/getFeed';
@@ -11,7 +11,13 @@ type UseFeedQueryOptions = {
 };
 
 export function useFeedQuery({ tier }: UseFeedQueryOptions) {
-  return useInfiniteQuery<PostsData, ApiError, PostsData, ['feed', { tier?: PostTier }], string | null>({
+  return useInfiniteQuery<
+    PostsData,
+    ApiError,
+    InfiniteData<PostsData>,
+    ['feed', { tier?: PostTier }],
+    string | null
+  >({
     queryKey: ['feed', { tier }],
     queryFn: ({ pageParam }) =>
       getFeed({

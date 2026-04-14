@@ -8,7 +8,7 @@ import { Button, ErrorState, Loader, Screen, Text } from '@/shared/ui';
 import { colors, spacing } from '@/shared/theme/tokens';
 import { FeedList } from '@/widgets/feed/ui/FeedList';
 
-const FILTER_OPTIONS: Array<{ value: FeedFilter; label: string }> = [
+const FILTER_OPTIONS: { value: FeedFilter; label: string }[] = [
   { value: 'all', label: 'Все' },
   { value: 'free', label: 'Бесплатные' },
   { value: 'paid', label: 'Платные' },
@@ -17,22 +17,23 @@ const FILTER_OPTIONS: Array<{ value: FeedFilter; label: string }> = [
 export const FeedScreen = observer(function FeedScreen() {
   const [store] = useState(() => new FeedUiStore());
   const query = useFeedQuery({ tier: store.tierFilter });
+  const { refetch, hasNextPage, isFetchingNextPage, fetchNextPage } = query;
 
   const hasPosts = selectFeedPosts(query.data).length > 0;
   const isInitialLoading = query.isPending && !hasPosts;
   const shouldShowFullScreenError = Boolean(query.error) && !hasPosts;
 
   const handleRefresh = useCallback(() => {
-    void query.refetch();
-  }, [query]);
+    void refetch();
+  }, [refetch]);
 
   const handleLoadNextPage = useCallback(() => {
-    if (!query.hasNextPage || query.isFetchingNextPage) {
+    if (!hasNextPage || isFetchingNextPage) {
       return;
     }
 
-    void query.fetchNextPage();
-  }, [query]);
+    void fetchNextPage();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   if (isInitialLoading) {
     return (
@@ -45,7 +46,7 @@ export const FeedScreen = observer(function FeedScreen() {
   if (shouldShowFullScreenError) {
     return (
       <Screen style={styles.centered}>
-        <ErrorState message="Не удалось загрузить публикации" onRetry={() => void query.refetch()} retryLabel="Повтор" />
+        <ErrorState message="Не удалось загрузить публикации" onRetry={() => void refetch()} retryLabel="Повтор" />
       </Screen>
     );
   }

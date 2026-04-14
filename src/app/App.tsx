@@ -1,37 +1,53 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { AppProviders } from '@/app/providers/AppProviders';
 import { env } from '@/shared/config/env';
+import { colors, spacing } from '@/shared/theme/tokens';
+import { Button, ErrorState, Screen, Text } from '@/shared/ui';
 
 export function App() {
   const apiHost = new URL(env.apiBaseUrl).host;
+  const [showErrorPreview, setShowErrorPreview] = useState(false);
 
   return (
     <AppProviders>
-      <SafeAreaView style={styles.container}>
-        <Text style={styles.text}>Mecenate Feed</Text>
-        <Text style={styles.caption}>API: {apiHost}</Text>
+      <Screen style={styles.container}>
+        <Text variant="title">Mecenate Feed</Text>
+        <Text variant="caption" color={colors.textSecondary}>
+          API: {apiHost}
+        </Text>
+        <View style={styles.previewToggle}>
+          <Button
+            title={showErrorPreview ? 'Hide ErrorState Preview' : 'Show ErrorState Preview'}
+            onPress={() => setShowErrorPreview((value) => !value)}
+          />
+        </View>
+        {showErrorPreview ? (
+          <ErrorState
+            message="Unable to load posts preview"
+            onRetry={() => setShowErrorPreview(false)}
+            retryLabel="Retry"
+            style={styles.errorState}
+          />
+        ) : null}
         <StatusBar style="auto" />
-      </SafeAreaView>
+      </Screen>
     </AppProviders>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#ffffff',
+    gap: spacing.sm,
   },
-  text: {
-    fontSize: 18,
-    fontWeight: '600',
+  previewToggle: {
+    marginTop: spacing.lg,
   },
-  caption: {
-    marginTop: 8,
-    fontSize: 13,
-    color: '#6b7280',
+  errorState: {
+    marginTop: spacing.xl,
+    width: '100%',
   },
 });

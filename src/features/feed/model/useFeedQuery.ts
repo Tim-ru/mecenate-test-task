@@ -26,7 +26,8 @@ export function useFeedQuery({ tier }: UseFeedQueryOptions) {
         tier,
       }),
     initialPageParam: null,
-    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.nextCursor : undefined),
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore && lastPage.nextCursor != null ? lastPage.nextCursor : undefined,
     retry: 1,
     throwOnError: false,
   });

@@ -74,8 +74,10 @@ export const FeedScreen = observer(function FeedScreen() {
         data={query.data}
         isRefreshing={query.isRefetching && !query.isFetchingNextPage}
         isFetchingNextPage={query.isFetchingNextPage}
+        isFetchNextPageError={query.isFetchNextPageError}
         onRefresh={handleRefresh}
         onEndReached={handleLoadNextPage}
+        onRetryNextPage={handleLoadNextPage}
       />
     </Screen>
   );

@@ -5,6 +5,7 @@ import { type Post } from '@/entities/post/model/types';
 import { PostCard } from '@/entities/post/ui/PostCard';
 import { type PostsData } from '@/entities/post/model/feed-types';
 import { selectFeedPosts } from '@/features/feed/model/selectFeedPosts';
+import { Button } from '@/shared/ui/Button';
 import { Loader } from '@/shared/ui/Loader';
 import { Text } from '@/shared/ui/Text';
 import { colors, spacing } from '@/shared/theme/tokens';
@@ -13,8 +14,10 @@ type FeedListProps = {
   data?: InfiniteData<PostsData>;
   isRefreshing: boolean;
   isFetchingNextPage: boolean;
+  isFetchNextPageError: boolean;
   onRefresh: () => void;
   onEndReached: () => void;
+  onRetryNextPage: () => void;
 };
 
 const keyExtractor = (item: Post) => item.id;
@@ -25,10 +28,28 @@ function FeedListBase({
   data,
   isRefreshing,
   isFetchingNextPage,
+  isFetchNextPageError,
   onRefresh,
   onEndReached,
+  onRetryNextPage,
 }: FeedListProps) {
   const posts = useMemo(() => selectFeedPosts(data), [data]);
+  const footer = useMemo(() => {
+    if (isFetchingNextPage) {
+      return <Loader style={styles.nextPageLoader} size="small" />;
+    }
+
+    if (isFetchNextPageError) {
+      return (
+        <View style={styles.paginationError}>
+          <Text color={colors.textSecondary}>Не удалось загрузить следующую страницу</Text>
+          <Button title="Повторить" onPress={onRetryNextPage} style={styles.retryButton} />
+        </View>
+      );
+    }
+
+    return null;
+  }, [isFetchNextPageError, isFetchingNextPage, onRetryNextPage]);
 
   return (
     <FlatList
@@ -45,7 +66,7 @@ function FeedListBase({
           <Text color={colors.textSecondary}>Публикаций пока нет</Text>
         </View>
       }
-      ListFooterComponent={isFetchingNextPage ? <Loader style={styles.nextPageLoader} size="small" /> : null}
+      ListFooterComponent={footer}
       showsVerticalScrollIndicator={false}
     />
   );
@@ -64,5 +85,14 @@ const styles = StyleSheet.create({
   },
   nextPageLoader: {
     paddingVertical: spacing.md,
+  },
+  paginationError: {
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+  },
+  retryButton: {
+    height: 36,
+    paddingHorizontal: spacing.lg,
   },
 });

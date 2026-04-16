@@ -1,5 +1,6 @@
 import { type PropsWithChildren } from 'react';
-import { SafeAreaView, type StyleProp, StyleSheet, type ViewStyle } from 'react-native';
+import { type StyleProp, StyleSheet, type ViewStyle } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing } from '@/shared/theme/tokens';
 
 type ScreenProps = PropsWithChildren<{
@@ -14,7 +15,6 @@ const styles = StyleSheet.create({
   base: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
 });

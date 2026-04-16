@@ -1,5 +1,10 @@
+export { ActionPill } from '@/shared/ui/ActionPill';
 export { Button } from '@/shared/ui/Button';
 export { ErrorState } from '@/shared/ui/ErrorState';
+export { CommentIcon, HeartFilledIcon, HeartOutlineIcon } from '@/shared/ui/icons';
 export { Loader } from '@/shared/ui/Loader';
 export { Screen } from '@/shared/ui/Screen';
+export { SegmentedControl } from '@/shared/ui/SegmentedControl';
+export { SkeletonBone } from '@/shared/ui/SkeletonBone';
+export { SlidePanel } from '@/shared/ui/SlidePanel';
 export { Text } from '@/shared/ui/Text';

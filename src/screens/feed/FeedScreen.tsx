@@ -160,7 +160,7 @@ export const FeedScreen = observer(function FeedScreen() {
     return (
       <Screen>
         <ErrorState
-          message="Не удалось загрузить публикацию"
+          message="Не удалось загрузить публикации"
           illustration={illustrationSticker}
           onRetry={() => void refetch()}
           retryLabel="Повторить"

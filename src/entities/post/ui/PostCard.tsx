@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BlurView } from 'expo-blur';
 import { Image, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { type Post } from '@/entities/post/model/types';
+import { AnimatedLikeButton } from '@/features/like/ui/AnimatedLikeButton';
 import { colors, radius, spacing } from '@/shared/theme/tokens';
 import { ActionPill } from '@/shared/ui/ActionPill';
 import { MoneyIcon } from '@/shared/ui/icons/MoneyIcon';
@@ -137,12 +138,11 @@ export function PostCard({ post, onOpenPost, onLikePress, onCommentPress }: Post
       ) : null}
 
       <View style={styles.actions}>
-        <ActionPill
-          kind="like"
+        <AnimatedLikeButton
           count={post.likesCount}
-          isActive={post.isLiked}
-          disabled={isPaid}
-          onPress={onLikePress ? () => onLikePress(post.id) : undefined}
+          isLiked={post.isLiked}
+          disabled={isPaid || !onLikePress}
+          onPress={() => onLikePress?.(post.id)}
         />
         <ActionPill
           kind="comment"

@@ -1,15 +1,8 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { observer } from 'mobx-react-lite';
-import {
-  Image,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { type InfiniteData } from '@tanstack/react-query';
-import { getPostById } from '@/features/post/api/getPostById';
 import { getPostComments } from '@/features/post/api/getPostComments';
 import { togglePostLike } from '@/features/post/api/togglePostLike';
 import { type Comment } from '@/features/post/model/post-api-types';
@@ -19,9 +12,9 @@ import { selectFeedPosts } from '@/features/feed/model/selectFeedPosts';
 import { useFeedQuery } from '@/features/feed/model/useFeedQuery';
 import { ErrorState, Screen, SegmentedControl, SlidePanel, Text } from '@/shared/ui';
 import { CommentLikeButton } from '@/shared/ui/CommentLikeButton';
-import { colors, radius, spacing } from '@/shared/theme/tokens';
+import { colors, spacing } from '@/shared/theme/tokens';
 import { FeedList, FeedListSkeleton } from '@/widgets/feed/ui/FeedList';
-import { PostDetailSkeleton } from '@/screens/feed/PostDetailSkeleton';
+import { PostDetailScreen } from '@/screens/post-detail-screen/PostDetailScreen';
 
 const illustrationSticker = require('@/../assets/illustration_sticker.png') as number;
 
@@ -85,12 +78,6 @@ export const FeedScreen = observer(function FeedScreen() {
     },
   });
 
-  const detailPostQuery = useQuery({
-    queryKey: ['post', openedPostId],
-    queryFn: () => getPostById(openedPostId as string),
-    enabled: Boolean(openedPostId),
-  });
-
   const commentsQuery = useQuery({
     queryKey: ['post', openedPostId, 'comments'],
     queryFn: () => getPostComments(openedPostId as string, { limit: 20 }),
@@ -132,14 +119,6 @@ export const FeedScreen = observer(function FeedScreen() {
   );
 
   const isPostModalVisible = Boolean(openedPostId);
-  const isPostLoading = detailPostQuery.isPending || commentsQuery.isPending;
-  const postErrorMessage = useMemo(() => {
-    if (detailPostQuery.error || commentsQuery.error) {
-      return 'Не удалось загрузить пост или комментарии';
-    }
-    return null;
-  }, [commentsQuery.error, detailPostQuery.error]);
-
   if (isInitialLoading) {
     return (
       <Screen>
@@ -204,22 +183,15 @@ export const FeedScreen = observer(function FeedScreen() {
             </Pressable>
           </View>
 
-          {isPostLoading ? (
-            <PostDetailSkeleton />
-          ) : postErrorMessage ? (
-            <View style={styles.panelCenteredState}>
-              <Text color={colors.textSecondary}>{postErrorMessage}</Text>
-            </View>
-          ) : (
-            <ScrollView contentContainerStyle={styles.panelBody}>
-              {detailPostQuery.data ? (
-                <>
-                  <Image source={{ uri: detailPostQuery.data.coverUrl }} style={styles.panelCover} />
-                  <Text variant="title">{detailPostQuery.data.title}</Text>
-                  <Text>{detailPostQuery.data.body || detailPostQuery.data.preview}</Text>
-                </>
-              ) : null}
-
+          <PostDetailScreen postId={openedPostId}>
+            {commentsQuery.isError ? (
+              <View style={styles.commentsBlock}>
+                <Text color={colors.textSecondary}>Не удалось загрузить комментарии</Text>
+                <Pressable onPress={() => void commentsQuery.refetch()} hitSlop={8}>
+                  <Text color={colors.accent}>Повторить</Text>
+                </Pressable>
+              </View>
+            ) : (
               <View style={styles.commentsBlock}>
                 <Text variant="title">Комментарии</Text>
                 {commentsQuery.data?.length ? (
@@ -244,8 +216,8 @@ export const FeedScreen = observer(function FeedScreen() {
                   <Text color={colors.textSecondary}>Комментариев пока нет</Text>
                 )}
               </View>
-            </ScrollView>
-          )}
+            )}
+          </PostDetailScreen>
         </View>
       </SlidePanel>
     </Screen>
@@ -268,22 +240,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
-  },
-  panelCenteredState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  panelBody: {
-    gap: spacing.md,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xl,
-  },
-  panelCover: {
-    width: '100%',
-    aspectRatio: 4 / 3,
-    borderRadius: radius.md,
-    backgroundColor: colors.border,
   },
   commentsBlock: {
     marginTop: spacing.lg,

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { BlurView } from 'expo-blur';
 import { Image, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { type Post } from '@/entities/post/model/types';
@@ -18,15 +18,18 @@ type PostCardProps = {
 const DONATE_MIN_WIDTH = 239;
 const COVER_HEIGHT = 210;
 
-export function PostCard({ post, onOpenPost, onLikePress, onCommentPress }: PostCardProps) {
+function PostCardBase({ post, onOpenPost, onLikePress, onCommentPress }: PostCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const isPaid = post.tier === 'paid';
   const previewText = post.preview || post.body;
   const shouldShowMoreLink = !isPaid && previewText.length > 90;
   const canOpenPost = !isPaid && Boolean(post.body?.trim());
-  const postText = isExpanded && canOpenPost ? post.body : previewText;
+  const postText = useMemo(
+    () => (isExpanded && canOpenPost ? post.body : previewText),
+    [canOpenPost, isExpanded, post.body, previewText],
+  );
 
-  const handleOpenPost = () => {
+  const handleOpenPost = useCallback(() => {
     if (isPaid) {
       return;
     }
@@ -39,7 +42,23 @@ export function PostCard({ post, onOpenPost, onLikePress, onCommentPress }: Post
     if (canOpenPost) {
       setIsExpanded(true);
     }
-  };
+  }, [canOpenPost, isPaid, onOpenPost, post.id]);
+
+  const handleExpand = useCallback(() => {
+    setIsExpanded(true);
+  }, []);
+
+  const handleCollapse = useCallback(() => {
+    setIsExpanded(false);
+  }, []);
+
+  const handleLike = useCallback(() => {
+    onLikePress?.(post.id);
+  }, [onLikePress, post.id]);
+
+  const handleComment = useCallback(() => {
+    onCommentPress?.(post.id);
+  }, [onCommentPress, post.id]);
 
   return (
     <View style={styles.card}>
@@ -118,7 +137,7 @@ export function PostCard({ post, onOpenPost, onLikePress, onCommentPress }: Post
           >
             {postText}
             {!isExpanded && shouldShowMoreLink ? (
-              <Text onPress={() => setIsExpanded(true)} color={colors.accent}>
+              <Text onPress={handleExpand} color={colors.accent}>
                 {' '}
                 Показать еще
               </Text>
@@ -128,7 +147,7 @@ export function PostCard({ post, onOpenPost, onLikePress, onCommentPress }: Post
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Скрыть текст поста"
-              onPress={() => setIsExpanded(false)}
+              onPress={handleCollapse}
               style={styles.showMoreWrap}
             >
               <Text color={colors.accent}>Скрыть</Text>
@@ -142,18 +161,29 @@ export function PostCard({ post, onOpenPost, onLikePress, onCommentPress }: Post
           count={post.likesCount}
           isLiked={post.isLiked}
           disabled={isPaid || !onLikePress}
-          onPress={() => onLikePress?.(post.id)}
+          onPress={handleLike}
         />
         <ActionPill
           kind="comment"
           count={post.commentsCount}
           disabled={isPaid}
-          onPress={onCommentPress ? () => onCommentPress(post.id) : undefined}
+          onPress={onCommentPress ? handleComment : undefined}
         />
       </View>
     </View>
   );
 }
+
+function arePostCardPropsEqual(prev: PostCardProps, next: PostCardProps) {
+  return (
+    prev.post === next.post &&
+    prev.onOpenPost === next.onOpenPost &&
+    prev.onLikePress === next.onLikePress &&
+    prev.onCommentPress === next.onCommentPress
+  );
+}
+
+export const PostCard = memo(PostCardBase, arePostCardPropsEqual);
 
 const styles = StyleSheet.create({
   card: {

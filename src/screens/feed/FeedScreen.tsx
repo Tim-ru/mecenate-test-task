@@ -41,6 +41,13 @@ export const FeedScreen = observer(function FeedScreen() {
     void refetch();
   }, [refetch]);
 
+  const handleFilterChange = useCallback(
+    (next: FeedFilter) => {
+      store.setFilter(next);
+    },
+    [store],
+  );
+
   const handleLoadNextPage = useCallback(() => {
     if (!hasNextPage || isFetchingNextPage) {
       return;
@@ -115,7 +122,7 @@ export const FeedScreen = observer(function FeedScreen() {
           <SegmentedControl
             options={FILTER_OPTIONS}
             value={store.filter}
-            onChange={(next) => store.setFilter(next)}
+            onChange={handleFilterChange}
           />
         </View>
         <FeedListSkeleton />
@@ -143,7 +150,7 @@ export const FeedScreen = observer(function FeedScreen() {
         <SegmentedControl
           options={FILTER_OPTIONS}
           value={store.filter}
-          onChange={(next) => store.setFilter(next)}
+          onChange={handleFilterChange}
         />
       </View>
 

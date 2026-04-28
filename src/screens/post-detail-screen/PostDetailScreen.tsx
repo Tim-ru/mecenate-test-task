@@ -1,4 +1,4 @@
-import { useRef, type ReactNode } from 'react';
+import { useCallback, useRef, type ReactNode } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Image,
@@ -68,6 +68,37 @@ export function PostDetailScreen({ postId, children, footer, onReachEnd }: PostD
     },
   });
 
+  const handleScroll = useCallback(
+    ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
+      if (!onReachEnd) {
+        return;
+      }
+
+      const { contentOffset, contentSize, layoutMeasurement } = nativeEvent;
+      const visibleBottom = contentOffset.y + layoutMeasurement.height;
+      const isNearBottom = visibleBottom >= contentSize.height - 120;
+      if (!isNearBottom) {
+        return;
+      }
+
+      if (Math.abs(contentOffset.y - lastReachedEndOffset.current) < 40) {
+        return;
+      }
+
+      lastReachedEndOffset.current = contentOffset.y;
+      onReachEnd();
+    },
+    [onReachEnd],
+  );
+
+  const handleLikePress = useCallback(() => {
+    if (!postId || likeMutation.isPending) {
+      return;
+    }
+
+    likeMutation.mutate(postId);
+  }, [likeMutation, postId]);
+
   if (query.isPending) {
     return <PostDetailSkeleton />;
   }
@@ -89,26 +120,6 @@ export function PostDetailScreen({ postId, children, footer, onReachEnd }: PostD
     );
   }
 
-  const handleScroll = ({ nativeEvent }: NativeSyntheticEvent<NativeScrollEvent>) => {
-    if (!onReachEnd) {
-      return;
-    }
-
-    const { contentOffset, contentSize, layoutMeasurement } = nativeEvent;
-    const visibleBottom = contentOffset.y + layoutMeasurement.height;
-    const isNearBottom = visibleBottom >= contentSize.height - 120;
-    if (!isNearBottom) {
-      return;
-    }
-
-    if (Math.abs(contentOffset.y - lastReachedEndOffset.current) < 40) {
-      return;
-    }
-
-    lastReachedEndOffset.current = contentOffset.y;
-    onReachEnd();
-  };
-
   return (
     <View style={styles.container}>
       <ScrollView
@@ -128,12 +139,7 @@ export function PostDetailScreen({ postId, children, footer, onReachEnd }: PostD
             isLiked={query.data.isLiked}
             count={query.data.likesCount}
             disabled={likeMutation.isPending}
-            onPress={() => {
-              if (!postId || likeMutation.isPending) {
-                return;
-              }
-              likeMutation.mutate(postId);
-            }}
+            onPress={handleLikePress}
           />
         </View>
         {children}

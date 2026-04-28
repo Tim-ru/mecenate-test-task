@@ -1,17 +1,15 @@
 import { useCallback, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { observer } from 'mobx-react-lite';
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { type InfiniteData } from '@tanstack/react-query';
-import { getPostComments } from '@/features/post/api/getPostComments';
 import { togglePostLike } from '@/features/post/api/togglePostLike';
-import { type Comment } from '@/features/post/model/post-api-types';
+import { PostCommentsSection } from '@/features/comments/ui/PostCommentsSection';
 import { FeedUiStore, type FeedFilter } from '@/features/feed/model/FeedUiStore';
 import { type PostsData } from '@/entities/post/model/feed-types';
 import { selectFeedPosts } from '@/features/feed/model/selectFeedPosts';
 import { useFeedQuery } from '@/features/feed/model/useFeedQuery';
 import { ErrorState, Screen, SegmentedControl, SlidePanel, Text } from '@/shared/ui';
-import { CommentLikeButton } from '@/shared/ui/CommentLikeButton';
 import { colors, spacing } from '@/shared/theme/tokens';
 import { FeedList, FeedListSkeleton } from '@/widgets/feed/ui/FeedList';
 import { PostDetailScreen } from '@/screens/post-detail-screen/PostDetailScreen';
@@ -78,12 +76,6 @@ export const FeedScreen = observer(function FeedScreen() {
     },
   });
 
-  const commentsQuery = useQuery({
-    queryKey: ['post', openedPostId, 'comments'],
-    queryFn: () => getPostComments(openedPostId as string, { limit: 20 }),
-    enabled: Boolean(openedPostId),
-  });
-
   const handleOpenPost = useCallback((postId: string) => {
     setOpenedPostId(postId);
   }, []);
@@ -102,21 +94,6 @@ export const FeedScreen = observer(function FeedScreen() {
   const handleCommentPress = useCallback((postId: string) => {
     setOpenedPostId(postId);
   }, []);
-
-  const handleCommentLike = useCallback(
-    (commentId: string) => {
-      queryClient.setQueryData<Comment[]>(
-        ['post', openedPostId, 'comments'],
-        (old) =>
-          old?.map((c) =>
-            c.id === commentId
-              ? { ...c, isLiked: !c.isLiked, likesCount: (c.likesCount ?? 0) + (c.isLiked ? -1 : 1) }
-              : c,
-          ),
-      );
-    },
-    [openedPostId, queryClient],
-  );
 
   const isPostModalVisible = Boolean(openedPostId);
   if (isInitialLoading) {
@@ -184,39 +161,7 @@ export const FeedScreen = observer(function FeedScreen() {
           </View>
 
           <PostDetailScreen postId={openedPostId}>
-            {commentsQuery.isError ? (
-              <View style={styles.commentsBlock}>
-                <Text color={colors.textSecondary}>Не удалось загрузить комментарии</Text>
-                <Pressable onPress={() => void commentsQuery.refetch()} hitSlop={8}>
-                  <Text color={colors.accent}>Повторить</Text>
-                </Pressable>
-              </View>
-            ) : (
-              <View style={styles.commentsBlock}>
-                <Text variant="title">Комментарии</Text>
-                {commentsQuery.data?.length ? (
-                  commentsQuery.data.map((comment) => (
-                    <View key={comment.id} style={styles.commentCard}>
-                      <Image
-                        source={{ uri: comment.author.avatarUrl }}
-                        style={styles.commentAvatar}
-                      />
-                      <View style={styles.commentBody}>
-                        <Text variant="caption">{comment.author.displayName}</Text>
-                        <Text>{comment.text}</Text>
-                      </View>
-                      <CommentLikeButton
-                        count={comment.likesCount ?? 0}
-                        isLiked={comment.isLiked}
-                        onPress={() => handleCommentLike(comment.id)}
-                      />
-                    </View>
-                  ))
-                ) : (
-                  <Text color={colors.textSecondary}>Комментариев пока нет</Text>
-                )}
-              </View>
-            )}
+            <PostCommentsSection postId={openedPostId} />
           </PostDetailScreen>
         </View>
       </SlidePanel>
@@ -240,25 +185,5 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.md,
-  },
-  commentsBlock: {
-    marginTop: spacing.lg,
-    gap: spacing.md,
-  },
-  commentCard: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  commentAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.border,
-  },
-  commentBody: {
-    flex: 1,
-    gap: spacing.xs,
   },
 });

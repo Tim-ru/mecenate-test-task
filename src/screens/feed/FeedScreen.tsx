@@ -4,7 +4,10 @@ import { observer } from 'mobx-react-lite';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { type InfiniteData } from '@tanstack/react-query';
 import { togglePostLike } from '@/features/post/api/togglePostLike';
-import { PostCommentsSection } from '@/features/comments/ui/PostCommentsSection';
+import {
+  PostCommentComposer,
+  PostCommentsSection,
+} from '@/features/comments/ui/PostCommentsSection';
 import { FeedUiStore, type FeedFilter } from '@/features/feed/model/FeedUiStore';
 import { type PostsData } from '@/entities/post/model/feed-types';
 import { selectFeedPosts } from '@/features/feed/model/selectFeedPosts';
@@ -25,6 +28,7 @@ const FILTER_OPTIONS: { value: FeedFilter; label: string }[] = [
 export const FeedScreen = observer(function FeedScreen() {
   const [store] = useState(() => new FeedUiStore());
   const [openedPostId, setOpenedPostId] = useState<string | null>(null);
+  const [commentsLoadSignal, setCommentsLoadSignal] = useState(0);
   const queryClient = useQueryClient();
   const query = useFeedQuery({ tier: store.tierFilter });
   const { refetch, hasNextPage, isFetchingNextPage, fetchNextPage } = query;
@@ -78,10 +82,12 @@ export const FeedScreen = observer(function FeedScreen() {
 
   const handleOpenPost = useCallback((postId: string) => {
     setOpenedPostId(postId);
+    setCommentsLoadSignal(0);
   }, []);
 
   const handleClosePost = useCallback(() => {
     setOpenedPostId(null);
+    setCommentsLoadSignal(0);
   }, []);
 
   const handleLikePress = useCallback(
@@ -93,6 +99,11 @@ export const FeedScreen = observer(function FeedScreen() {
 
   const handleCommentPress = useCallback((postId: string) => {
     setOpenedPostId(postId);
+    setCommentsLoadSignal(0);
+  }, []);
+
+  const handleDetailReachEnd = useCallback(() => {
+    setCommentsLoadSignal((signal) => signal + 1);
   }, []);
 
   const isPostModalVisible = Boolean(openedPostId);
@@ -160,8 +171,12 @@ export const FeedScreen = observer(function FeedScreen() {
             </Pressable>
           </View>
 
-          <PostDetailScreen postId={openedPostId}>
-            <PostCommentsSection postId={openedPostId} />
+          <PostDetailScreen
+            postId={openedPostId}
+            onReachEnd={handleDetailReachEnd}
+            footer={<PostCommentComposer postId={openedPostId} />}
+          >
+            <PostCommentsSection postId={openedPostId} loadMoreSignal={commentsLoadSignal} />
           </PostDetailScreen>
         </View>
       </SlidePanel>

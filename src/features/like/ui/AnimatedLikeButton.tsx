@@ -25,20 +25,6 @@ export function AnimatedLikeButton({
   onPress,
 }: AnimatedLikeButtonProps) {
   const scale = useSharedValue(1);
-  const backgroundColor = disabled
-    ? isLiked
-      ? colors.actionPillLikedDisabled
-      : colors.actionPillDisabled
-    : isLiked
-      ? colors.actionPillLiked
-      : colors.actionPillDefault;
-  const foregroundColor = disabled
-    ? isLiked
-      ? colors.actionPillLikedDisabledForeground
-      : colors.actionPillDisabledForeground
-    : isLiked
-      ? colors.actionPillLikedForeground
-      : colors.textSecondary;
 
   const animatedIconStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -59,22 +45,53 @@ export function AnimatedLikeButton({
       accessibilityLabel={isLiked ? 'Убрать лайк' : 'Поставить лайк'}
       disabled={disabled}
       onPress={handlePress}
-      style={({ pressed }) => [
-        styles.button,
-        { backgroundColor },
-        pressed && !disabled ? styles.buttonPressed : undefined,
-      ]}
+      style={(state) => {
+        const withHovered = state as typeof state & { hovered?: boolean };
+        const isHovered = Boolean(withHovered.hovered);
+
+        const backgroundColor = disabled
+          ? isLiked
+            ? colors.actionPillLikedDisabled
+            : colors.actionPillDisabled
+          : isLiked
+            ? state.pressed
+              ? colors.actionPillLikedActive
+              : isHovered
+                ? colors.actionPillLikedHover
+                : colors.actionPillLiked
+            : state.pressed
+              ? colors.actionPillActive
+              : isHovered
+                ? colors.actionPillHover
+                : colors.actionPillDefault;
+
+        return [styles.button, { backgroundColor }];
+      }}
     >
-      <Animated.View style={animatedIconStyle}>
-        {isLiked ? (
-          <HeartFilledIcon color={foregroundColor} />
-        ) : (
-          <HeartOutlineIcon color={foregroundColor} />
-        )}
-      </Animated.View>
-      <Text variant="caption" color={foregroundColor}>
-        {count}
-      </Text>
+      {(state) => {
+        const foregroundColor = disabled
+          ? isLiked
+            ? colors.actionPillLikedDisabledForeground
+            : colors.actionPillDisabledForeground
+          : isLiked
+            ? colors.actionPillLikedForeground
+            : colors.textSecondary;
+
+        return (
+          <>
+            <Animated.View style={animatedIconStyle}>
+              {isLiked ? (
+                <HeartFilledIcon color={foregroundColor} />
+              ) : (
+                <HeartOutlineIcon color={foregroundColor} />
+              )}
+            </Animated.View>
+            <Text variant="caption" color={foregroundColor}>
+              {count}
+            </Text>
+          </>
+        );
+      }}
     </Pressable>
   );
 }
@@ -89,8 +106,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xs,
     paddingHorizontal: spacing.sm,
-  },
-  buttonPressed: {
-    opacity: 0.92,
   },
 });

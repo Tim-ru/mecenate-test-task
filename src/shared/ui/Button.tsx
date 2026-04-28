@@ -14,16 +14,30 @@ export function Button({ title, onPress, disabled = false, style }: ButtonProps)
     <Pressable
       onPress={onPress}
       disabled={disabled}
-      style={({ pressed }) => [
-        styles.base,
-        pressed && !disabled ? styles.interactivePressed : undefined,
-        disabled ? styles.disabled : undefined,
-        style,
-      ]}
+      style={(state) => {
+        const withHovered = state as typeof state & { hovered?: boolean };
+        const isHovered = Boolean(withHovered.hovered);
+        const isInteractive = !disabled && (state.pressed || isHovered);
+
+        return [
+          styles.base,
+          isInteractive ? styles.interactivePressed : undefined,
+          disabled ? styles.disabled : undefined,
+          style,
+        ];
+      }}
     >
-      <Text variant="button" color={colors.onAccent}>
-        {title}
-      </Text>
+      {(state) => {
+        const withHovered = state as typeof state & { hovered?: boolean };
+        const isHovered = Boolean(withHovered.hovered);
+        const textColor = !disabled && (state.pressed || isHovered) ? colors.onAccentMuted : colors.onAccent;
+
+        return (
+          <Text variant="button" color={textColor}>
+            {title}
+          </Text>
+        );
+      }}
     </Pressable>
   );
 }
